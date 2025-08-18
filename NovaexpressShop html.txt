@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Store</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9fafb;
+      color: #333;
+    }
+    header {
+      background: #4f46e5;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    header h1 { margin: 0; font-size: 1.5rem; }
+    header button {
+      background: white;
+      color: #4f46e5;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+    header button:hover { background: #e0e7ff; }
+
+    .products {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+      padding: 2rem;
+    }
+    .product {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      padding: 1rem;
+      text-align: center;
+      transition: transform 0.2s;
+    }
+    .product:hover { transform: translateY(-4px); }
+    .product img {
+      max-width: 100%;
+      border-radius: 8px;
+    }
+    .product h3 { margin: 0.5rem 0; }
+    .product button {
+      background: #4f46e5;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .product button:hover { background: #4338ca; }
+
+    /* Cart Sidebar */
+    .cart-sidebar {
+      position: fixed;
+      top: 0;
+      right: -400px;
+      width: 350px;
+      height: 100%;
+      background: white;
+      box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+      transition: right 0.3s ease;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+    .cart-sidebar.active { right: 0; }
+    .cart-sidebar h2 {
+      margin: 0 0 1rem;
+      font-size: 1.3rem;
+    }
+    .cart-items { flex: 1; overflow-y: auto; }
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 0.5rem;
+    }
+    .cart-item span { font-size: 0.9rem; }
+    .cart-total { font-weight: bold; margin: 1rem 0; }
+    .cart-sidebar button {
+      margin-top: auto;
+      background: #10b981;
+    }
+    .cart-sidebar button:hover { background: #059669; }
+
+    /* Checkout Popup */
+    .checkout-popup {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+    .checkout-popup.active { display: flex; }
+    .checkout-form {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .checkout-form h2 { margin-top: 0; }
+    .checkout-form input, .checkout-form select {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    .checkout-form button {
+      background: #4f46e5;
+      color: white;
+      border: none;
+      padding: 0.7rem;
+      width: 100%;
+      border-radius: 6px;
+      font-weight: bold;
+    }
+    .checkout-form button:hover { background: #4338ca; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>My Store</h1>
+    <button id="cart-btn">🛒 Cart</button>
+  </header>
+
+  <main class="products" id="product-list"></main>
+
+  <!-- Cart Sidebar -->
+  <div class="cart-sidebar" id="cart-sidebar">
+    <h2>Your Cart</h2>
+    <div class="cart-items" id="cart-items"></div>
+    <div class="cart-total" id="cart-total">Total: 0 DA</div>
+    <button id="checkout-btn">Checkout</button>
+  </div>
+
+  <!-- Checkout Popup -->
+  <div class="checkout-popup" id="checkout-popup">
+    <form class="checkout-form" id="checkout-form" method="POST" action="https://formspree.io/f/mvgqlbbz">
+      <h2>Checkout</h2>
+      <input type="text" name="Full Name" placeholder="Full Name" required />
+      <input type="tel" name="Phone Number" placeholder="Phone Number" required />
+      <input type="text" name="State" placeholder="State" required />
+      <input type="text" name="City" placeholder="City" required />
+      <select name="Delivery Option" id="delivery-option" required>
+        <option value="home">Deliver to Home (+300 DA)</option>
+        <option value="office">Deliver to Office (+200 DA)</option>
+      </select>
+      <input type="hidden" name="Order Details" id="order-details"/>
+      <input type="hidden" name="Total Price" id="total-price"/>
+      <button type="submit">Submit Order</button>
+    </form>
+  </div>
+
+  <script>
+    const PRODUCTS = [
+      { id: 1, name: "Backpack", price: 2500, img: "https://via.placeholder.com/200x150?text=Backpack" },
+      { id: 2, name: "Notebook", price: 400, img: "https://via.placeholder.com/200x150?text=Notebook" },
+      { id: 3, name: "Pen Set", price: 200, img: "https://via.placeholder.com/200x150?text=Pen+Set" }
+    ];
+    const CURRENCY = "DA";
+    const HOME_SHIPPING = 300;
+    const OFFICE_SHIPPING = 200;
+
+    const productList = document.getElementById("product-list");
+    const cartBtn = document.getElementById("cart-btn");
+    const cartSidebar = document.getElementById("cart-sidebar");
+    const cartItemsDiv = document.getElementById("cart-items");
+    const cartTotalDiv = document.getElementById("cart-total");
+    const checkoutBtn = document.getElementById("checkout-btn");
+    const checkoutPopup = document.getElementById("checkout-popup");
+    const checkoutForm = document.getElementById("checkout-form");
+    const orderDetailsInput = document.getElementById("order-details");
+    const totalPriceInput = document.getElementById("total-price");
+    const deliveryOption = document.getElementById("delivery-option");
+
+    let cart = [];
+
+    function renderProducts() {
+      productList.innerHTML = "";
+      PRODUCTS.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "product";
+        div.innerHTML = `
+          <img src="${p.img}" alt="${p.name}">
+          <h3>${p.name}</h3>
+          <p>${p.price} ${CURRENCY}</p>
+          <button onclick="addToCart(${p.id})">Add to Cart</button>
+        `;
+        productList.appendChild(div);
+      });
+    }
+
+    function addToCart(id) {
+      const product = PRODUCTS.find(p => p.id === id);
+      const item = cart.find(i => i.id === id);
+      if (item) { item.qty++; } else { cart.push({ ...product, qty: 1 }); }
+      renderCart();
+    }
+
+    function removeFromCart(id) {
+      cart = cart.filter(i => i.id !== id);
+      renderCart();
+    }
+
+    function renderCart() {
+      cartItemsDiv.innerHTML = "";
+      let total = 0;
+      cart.forEach(i => {
+        total += i.price * i.qty;
+        const div = document.createElement("div");
+        div.className = "cart-item";
+        div.innerHTML = `
+          <span>${i.name} x${i.qty}</span>
+          <span>${i.price * i.qty} ${CURRENCY}</span>
+          <button onclick="removeFromCart(${i.id})">❌</button>
+        `;
+        cartItemsDiv.appendChild(div);
+      });
+      cartTotalDiv.textContent = "Total: " + total + " " + CURRENCY;
+      return total;
+    }
+
+    cartBtn.addEventListener("click", () => {
+      cartSidebar.classList.toggle("active");
+    });
+
+    checkoutBtn.addEventListener("click", () => {
+      checkoutPopup.classList.add("active");
+    });
+
+    checkoutPopup.addEventListener("click", e => {
+      if (e.target === checkoutPopup) checkoutPopup.classList.remove("active");
+    });
+
+    checkoutForm.addEventListener("submit", () => {
+      let total = renderCart();
+      if (deliveryOption.value === "home") total += HOME_SHIPPING;
+      else if (deliveryOption.value === "office") total += OFFICE_SHIPPING;
+
+      orderDetailsInput.value = cart.map(i => `${i.name} x${i.qty}`).join(", ");
+      totalPriceInput.value = total + " " + CURRENCY;
+    });
+
+    renderProducts();
+  </script>
+</body>
+</html>
