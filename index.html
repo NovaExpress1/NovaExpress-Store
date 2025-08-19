@@ -1,94 +1,289 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NovaExpress Store</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f4f2f8;
       margin: 0;
-      padding: 0;
+      background: #f5f5f5;
     }
     header {
-      background: linear-gradient(135deg, #6a1b9a, #8e24aa);
-      color: white;
+      background: #4a148c;
+      color: #fff;
+      padding: 15px;
       text-align: center;
-      padding: 20px;
-      font-size: 26px;
-      font-weight: bold;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 24px;
     }
     .products {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 20px;
       padding: 20px;
     }
     .product {
-      background: white;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       padding: 15px;
-      border-radius: 14px;
       text-align: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s ease;
     }
     .product:hover {
       transform: translateY(-5px);
-      box-shadow: 0 6px 15px rgba(0,0,0,0.2);
     }
     .product img {
       width: 100%;
-      height: 170px;
-      object-fit: cover;
       border-radius: 8px;
     }
-    button {
-      margin-top: 10px;
-      padding: 10px 16px;
+    .product h3 {
+      margin: 10px 0 5px;
+    }
+    .product p {
+      margin: 5px 0;
+    }
+    .product button {
+      background: #4a148c;
+      color: #fff;
       border: none;
-      border-radius: 10px;
-      background: #7b1fa2;
-      color: white;
+      padding: 10px 15px;
+      margin-top: 10px;
+      border-radius: 5px;
       cursor: pointer;
-      font-size: 14px;
       transition: background 0.3s;
     }
-    button:hover {
+    .product button:hover {
+      background: #6a1b9a;
+    }
+    /* 🛒 Cart Sidebar */
+    .cart-sidebar {
+      position: fixed;
+      top: 0;
+      right: -400px; /* hidden by default */
+      width: 350px;
+      height: 100%;
+      background: #fff;
+      box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+      transition: right 0.3s ease;
+      display: flex;
+      flex-direction: column;
+      z-index: 9999;
+    }
+    .cart-sidebar.open {
+      right: 0;
+    }
+    .cart-header, .cart-footer {
+      padding: 15px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #cartItems {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+    .cart-footer {
+      border-top: 1px solid #eee;
+      border-bottom: none;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .cart-footer p {
+      margin: 5px 0;
+    }
+    .cart-footer button {
+      margin-top: 10px;
       background: #4a148c;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .cart-footer button:hover {
+      background: #6a1b9a;
+    }
+    /* Checkout Form */
+    #checkoutForm {
+      display: none;
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 350px;
+      height: 100%;
+      background: #fafafa;
+      box-shadow: -2px 0 10px rgba(0,0,0,0.2);
+      padding: 20px;
+      z-index: 10000;
+      overflow-y: auto;
+    }
+    #checkoutForm h2 {
+      margin-top: 0;
+    }
+    #checkoutForm input, #checkoutForm select {
+      width: 100%;
+      padding: 8px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    #checkoutForm button {
+      margin-top: 10px;
+      background: #4a148c;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #checkoutForm button:hover {
+      background: #6a1b9a;
+    }
+    /* Floating Cart Button */
+    .cart-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #4a148c;
+      color: #fff;
+      border: none;
+      padding: 15px;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      z-index: 1001;
+    }
+    .cart-button:hover {
+      background: #6a1b9a;
     }
   </style>
 </head>
 <body>
-  <header>🛍️ NovaExpress Store</header>
-  
-  <section class="products" id="product-list">
-    <!-- Products will load here -->
-  </section>
+  <header>
+    <h1>NovaExpress Store</h1>
+  </header>
+
+  <main class="products" id="productList"></main>
+
+  <!-- Floating Cart Button -->
+  <button class="cart-button" onclick="toggleCart()">🛒</button>
+
+  <!-- 🛒 Cart Sidebar -->
+  <div id="cartSidebar" class="cart-sidebar">
+    <div class="cart-header">
+      <h2>Your Cart</h2>
+      <button onclick="toggleCart()">✖</button>
+    </div>
+    <div id="cartItems"></div>
+    <div class="cart-footer">
+      <p>Total: <span id="cartTotal">0</span> DA</p>
+      <button onclick="checkout()">Checkout</button>
+    </div>
+  </div>
+
+  <!-- Checkout Form -->
+  <div id="checkoutForm">
+    <h2>Checkout</h2>
+    <form action="https://formspree.io/f/mvgqlbbz" method="POST">
+      <input type="text" name="fullname" placeholder="Full Name" required />
+      <input type="text" name="phone" placeholder="Phone Number" required />
+      <input type="text" name="state" placeholder="State" required />
+      <input type="text" name="city" placeholder="City" required />
+      <select name="delivery" required>
+        <option value="">Choose delivery option</option>
+        <option value="home">Home Delivery (+400 DA)</option>
+        <option value="office">Delivery Office (+200 DA)</option>
+      </select>
+      <input type="hidden" name="order" id="orderField" />
+      <button type="submit">Confirm Order</button>
+      <button type="button" onclick="closeCheckout()">Cancel</button>
+    </form>
+  </div>
 
   <script>
-    // ✅ Sample products (change or add more later)
-    const PRODUCTS = [
-      { id: 1, name: "🎒 School Backpack", price: 2500, img: "https://i.ibb.co/0Y5V2Rk/backpack.jpg" },
-      { id: 2, name: "✏️ Pencil Case", price: 800, img: "https://i.ibb.co/bQ08s5p/pencil-case.jpg" },
-      { id: 3, name: "📓 Notebook Set", price: 1200, img: "https://i.ibb.co/SRKzLhY/notebook.jpg" }
+    // Example Products
+    const products = [
+      { name: "Backpack", price: 2500, image: "https://via.placeholder.com/200" },
+      { name: "Notebook", price: 500, image: "https://via.placeholder.com/200" },
+      { name: "Pen", price: 100, image: "https://via.placeholder.com/200" },
+      { name: "Headphones", price: 4500, image: "https://via.placeholder.com/200" }
     ];
 
-    function renderProducts() {
-      const container = document.getElementById("product-list");
-      container.innerHTML = PRODUCTS.map(p => `
-        <div class="product">
-          <img src="${p.img}" alt="${p.name}">
-          <h3>${p.name}</h3>
-          <p><strong>${p.price} DA</strong></p>
-          <button onclick="alert('Added ${p.name} to cart!')">Add to Cart</button>
-        </div>
-      `).join("");
+    // Render products
+    const productList = document.getElementById('productList');
+    products.forEach((p, index) => {
+      const div = document.createElement('div');
+      div.className = 'product';
+      div.innerHTML = `
+        <img src="${p.image}" alt="${p.name}">
+        <h3>${p.name}</h3>
+        <p>${p.price} DA</p>
+        <button onclick="addToCart(products[${index}])">Add to Cart</button>
+      `;
+      productList.appendChild(div);
+    });
+
+    // Cart
+    let cart = [];
+
+    function addToCart(product) {
+      cart.push(product);
+      updateCart();
+      toggleCart(true); // open cart when adding
     }
 
-    // ✅ Run after page loads
-    document.addEventListener("DOMContentLoaded", renderProducts);
+    function updateCart() {
+      const cartItemsDiv = document.getElementById('cartItems');
+      const cartTotalSpan = document.getElementById('cartTotal');
+
+      cartItemsDiv.innerHTML = '';
+      let total = 0;
+
+      cart.forEach((item, index) => {
+        total += item.price;
+        const itemDiv = document.createElement('div');
+        itemDiv.innerHTML = `
+          <p>${item.name} - ${item.price} DA 
+          <button onclick="removeFromCart(${index})">Remove</button></p>`;
+        cartItemsDiv.appendChild(itemDiv);
+      });
+
+      cartTotalSpan.textContent = total;
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      updateCart();
+    }
+
+    function toggleCart(forceOpen = false) {
+      const cartSidebar = document.getElementById('cartSidebar');
+      if (forceOpen) {
+        cartSidebar.classList.add('open');
+      } else {
+        cartSidebar.classList.toggle('open');
+      }
+    }
+
+    function checkout() {
+      document.getElementById('orderField').value = JSON.stringify(cart);
+      document.getElementById('checkoutForm').style.display = 'block';
+      toggleCart(); // close cart when opening checkout
+    }
+
+    function closeCheckout() {
+      document.getElementById('checkoutForm').style.display = 'none';
+    }
   </script>
 </body>
 </html>
